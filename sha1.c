@@ -7,6 +7,11 @@
 #include <string.h>
 #include "sha1.h"
 
+/* Something's weird with the __BYTE_ORDER__ in MSVC's C99 compiler */
+#ifdef _WIN32
+# define __LITTLE_ENDIAN__
+#endif
+
 #ifdef __BIG_ENDIAN__
 # define SHA_BIG_ENDIAN
 #elif defined __LITTLE_ENDIAN__

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +10,7 @@
 #if _WIN32
 #define PRISize "Iu"
 #include <conio.h>
+#define fseek _fseeki64
 #else
 #define PRISize "zu"
 #include <termios.h>
@@ -53,7 +55,7 @@ static int GetTermChar()
     ch = getchar();
     tcsetattr(0, TCSANOW, &tioOld);
 #else
-    ch = getch();
+    ch = _getch();
 #endif
     return ch;
 }
