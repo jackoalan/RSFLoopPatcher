@@ -122,8 +122,8 @@ static void ReadSamples(struct RSFEntry* entry, FILE* fp,
                         size_t startHiOff, size_t startLoOff,
                         size_t endHiOff, size_t endLoOff)
 {
-    int16_t upper;
-    int16_t lower;
+    int16_t upper = 0;
+    int16_t lower = 0;
 
     if (startHiOff || startLoOff)
     {
@@ -224,9 +224,12 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        fprintf(stderr, "Usage: RSFLoopPatcher <dol-in>\n");
+        fprintf(stderr, "Usage: RSFLoopPatcher <dol-in> [-f]\n");
         return 1;
     }
+    bool force = false;
+    if (argc >= 3 && argv[2][0] == '-' && argv[2][1] == 'f')
+        force = true;
 
     /* Validate image */
     FILE* fp = fopen(argv[1], "rb");
@@ -236,37 +239,40 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    printf("Validating '%s'\n", argv[1]);
-    fflush(stdout);
-    size_t totalBytes = 0;
-    size_t rdBytes;
-    char buf[8192];
-    sha1nfo s;
-    sha1_init(&s);
-    while ((rdBytes = fread(buf, 1, 8192, fp)))
+    if (!force)
     {
-        ZeroDynamicRegions(buf, totalBytes);
-        sha1_write(&s, buf, rdBytes);
-        totalBytes += rdBytes;
-        printf(" %" PRISize " bytes\r", totalBytes);
+        printf("Validating '%s'\n", argv[1]);
         fflush(stdout);
-    }
-    printf("\n\n");
-    fflush(stdout);
+        size_t totalBytes = 0;
+        size_t rdBytes;
+        char buf[8192];
+        sha1nfo s;
+        sha1_init(&s);
+        while ((rdBytes = fread(buf, 1, 8192, fp)))
+        {
+            ZeroDynamicRegions(buf, totalBytes);
+            sha1_write(&s, buf, rdBytes);
+            totalBytes += rdBytes;
+            printf(" %" PRISize " bytes\r", totalBytes);
+            fflush(stdout);
+        }
+        printf("\n\n");
+        fflush(stdout);
 
-    uint8_t* fileHash = sha1_result(&s);
+        uint8_t* fileHash = sha1_result(&s);
 #if 0
-    for (int i=0 ; i<20 ; ++i)
-        printf("%02X", fileHash[i]);
-    fflush(stdout);
+        for (int i=0 ; i<20 ; ++i)
+            printf("%02X", fileHash[i]);
+        fflush(stdout);
 #endif
-    if (memcmp(GM8E01_0_00_FILTERED_SHA1, fileHash, 20))
-    {
-        fprintf(stderr,
-                "This tool is only made to patch raw GM8E01-0-00 NTSC .dol files\n"
-                "%s did not pass the hash validation\n", argv[1]);
-        fclose(fp);
-        return 1;
+        if (memcmp(GM8E01_0_00_FILTERED_SHA1, fileHash, 20))
+        {
+            fprintf(stderr,
+                    "This tool is only made to patch raw GM8E01-0-00 NTSC .dol files\n"
+                    "%s did not pass the hash validation\n", argv[1]);
+            fclose(fp);
+            return 1;
+        }
     }
 
     /* Load current sample offsets */
